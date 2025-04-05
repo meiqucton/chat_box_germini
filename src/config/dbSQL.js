@@ -1,10 +1,11 @@
-const mysql2 = require("mysql2");
+const mysql = require('mysql2/promise');  
 require('dotenv').config();
 
-const db = mysql2.createPool({
+const db = mysql.createPool({
     host: 'localhost',
-    user:  'root',
+    user:'root',
     password: 'Lol09833@',
+    database: 'SanPhamDB',
 });
 
 db.getConnection((err, connection) => {
@@ -15,4 +16,6 @@ db.getConnection((err, connection) => {
     console.log("Connected to the database");
     connection.release();
 });
+// Khởi tạo FAISS để lưu trữ các vector embeddings
+
 module.exports = db;

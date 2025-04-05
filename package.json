@@ -6,13 +6,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.js"
   },
-  "repository": {
-    
-  },
+  "repository": {},
   "author": "",
   "license": "ISC",
-  "bugs": {
-  },
+  "bugs": {},
   "description": "",
   "dependencies": {
     "@google/genai": "^0.7.0",
@@ -22,6 +19,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
+    "faiss-node": "^0.5.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
