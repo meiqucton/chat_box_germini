@@ -1,42 +1,60 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const faiss = require('faiss-node');
 const model_chatbox = require('../models/Model_chatbox');
 const Model_sql = require('../models/Model_sql');
+const { json } = require('body-parser');
+const { Client } = require('@elastic/elasticsearch');
+const natural = require('natural');
+const pinecone = require('../config/API_pinecone.mjs');
+const index = pinecone.pc.Index('chatbox-ai');
 
+let text;
 
-
-const dimension = 768; // Kích thước vector embedding (ví dụ với Gemini hoặc BERT)
-const index = new faiss.IndexFlatL2(dimension);
-const productEmbeddings = [];
-
-const FAISS = async (req, res) => {
-    try{
-        const Product= await Model_sql.getProduct();
-        
-        for (const product of Product) {
-          const text = {
+// Hàm xây dựng text từ dữ liệu sản phẩm
+const buildText = async () => {
+    try {
+        const products = await Model_sql.getProduct();
+        const getPro = products.map((product) => ({
             id: product.id,
             name: product.name,
             description: product.mo_ta,
-            price: product.price,
-            start: product.so_sao_trung_binh,
-            combs_purchased: product.luot_mua,
-            type_product: product. the_loai,
-            time: product.thoigian_them,
-          };
-         const embedding = model_chatbox.AI_Chat_BOX(text);
-          
-        index.add(embedding);// FIX Lại "
-          productEmbeddings.push({
-            id: product.id, text
-        });
-    console.log("productEmbeddings:", productEmbeddings);
-        }
+            price: product.gia,
+            rate: product.so_danh_gia,
+            soluocmua: product.luot_mua
+        }));
+         text = getPro.map(product => 
+            `${product.id} - ${product.name} - ${product.description} - ${product.price} - ${product.rate} - ${product.soluocmua}`
+        ).join(" ");  
 
-    }catch(err){
-        console.error("Error FAISS:", err);
+    } catch (error) {
+        console.error("Lỗi khi truy vấn Elasticsearch:", error);
     }
-}
-FAISS();
+};
+
+// Hàm gọi Gemini API để lấy embedding
+const getEmbedding = async () => {
+    try {
+       await buildText(); // Gọi hàm để xây dựng text trước khi lấy embedding
+       console.log("Text:", text);
+      
+        const res = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            { input: text }, // Sử dụng biến text đã được xây dựng
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        // Hiển thị kết quả nhận được từ API
+        console.log("Embedding Response:", res.data);
+
+    } catch (error) {
+        console.error("Lỗi khi truy vấn Gemini API:", error.response ? error.response.data : error.message);
+    }
+};
+
+// Gọi hàm để lấy embedding
+getEmbedding();
